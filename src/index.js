@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { app } from './app.js'
+
 // mongoose connects data-base to app]
 // import express from 'express'
 import dotenv from 'dotenv'// it wil not work here
