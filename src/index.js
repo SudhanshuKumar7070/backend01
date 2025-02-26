@@ -10,7 +10,7 @@ import connectDB from './db/index.js'
 //  creating a config file for dotenv
 // dotenv are used to load add .env files to the whole process or program  as quickly as possible
 dotenv.config({
-    path:'./env'
+    path:'./.env'
 })
 connectDB()
 .then(()=>{

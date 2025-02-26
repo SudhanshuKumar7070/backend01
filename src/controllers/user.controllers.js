@@ -6,8 +6,8 @@ import { UploadFileToCloudinary } from "../utils/CloudinaryFileUpload.js";
 const registerUser = AsyncHandler(async (req, res) => {
   /***********STEPS REQUIRED DURING REGISTER******
      * 1.Take Data like email-id full-name, username, password from user via req.body,from frontend,take image 
-     * from user - using frontend , in which user can  upload image ,
-     * . store image temproarily in local server
+       from user - using frontend , in which user can  upload image ,
+       . store image temproarily in local server
      * 2. apply validations to user details - - like  for empty or null data,format of email is accurate or not
      * 3. check if user is already exists or not
      * 4. check if images are there or not 
@@ -19,7 +19,8 @@ const registerUser = AsyncHandler(async (req, res) => {
      
      */
 
-  const { fullName, email, password, userName } = req.body;
+  const { fullName, email, password, userName } = req.body
+  
   //  we can not directly handle images or directly accepts image files there..
   console.log("password: ", password);
   /*  old method--
@@ -52,7 +53,7 @@ const registerUser = AsyncHandler(async (req, res) => {
     $or: [{ email }, { userName }],
   });
   if (currentUser) {
-    throw new ApiError(409, "user already exists with same email or username");
+    throw new ApiError(400, "user already exists with same email or username");
   }
   // handle image files and other files by using middleware
   const avatarImagePath = req.files?.avatar[0]?.path;
@@ -102,23 +103,21 @@ const registerUser = AsyncHandler(async (req, res) => {
     fullName,
     avatar: avatarCloudinaryUrl.url,
     coverImage: coverImageCloudinaryUrl.url,
-
+    email,
     userName: userName.toLowerCase(),
     password,
   });
-  res.status(200).json({
-    messagge: "ok",
-  });
+  // res.status(200).json({
+  //   messagge: "ok",
+  // });
 
-  const createdUser = user
-    .findById(user._id)
-    .select(" -password -refreshToken");
+  const createdUser = await User.findById(user._id).select(" -password -refreshToken ")
   if (!createdUser) {
     throw new ApiError(500, " error in registring user ");
   }
-  // return new ApiResponse(200, createdUser, " user created sucessfully ");
+  
   return res
     .status(201)
-    .json(new ApiResponse(200, createdUser, " user created sucessfully "));
+    .json(new ApiResponse(200,createdUser, " user created sucessfully "));
 });
 export { registerUser };

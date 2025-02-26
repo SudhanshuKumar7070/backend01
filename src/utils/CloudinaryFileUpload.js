@@ -9,18 +9,25 @@ import fs from 'fs'
  });
 const UploadFileToCloudinary = async( localFilePath)=>{
        try{
-        if(! localFilePath) return null;
+        if(! localFilePath) {
+            console.log('local file path not found');
+            return null;
+            
+        };
         const response = await cloudinary.uploader.upload(localFilePath,{
             resource_type:"auto"
         })
-        console.log("file upload to cloudinry sucessfull with url:", response.url);
+        console.log(response);
         
+        console.log("file upload to cloudinry sucessfull with url:", response.url);
+        fs.unlinkSync(localFilePath);
         return response
         
        }
        catch(error){
        console.log('error in uploadFileToCloudinary< ', error);
        fs.unlinkSync(localFilePath) // remove locally stored file path if uplaod fails
+
        return null;
        }
 }
