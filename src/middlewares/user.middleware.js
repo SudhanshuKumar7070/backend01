@@ -27,7 +27,7 @@ export const verifyJWT = AsyncHandler(async (req, res, next) => {
     "-password -refreshToken"
   );
   
-  console.log('user at middleware:::>', user);
+  console.log('user at middleware::=> ', user);
   
   if (!user) throw new ApiError(401, "invalid access token");
 

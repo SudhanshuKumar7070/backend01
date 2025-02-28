@@ -326,15 +326,159 @@ const getNewAccessToken = AsyncHandler(async (req, res, next) => {
       new ApiResponse(
         201,
         {
-           refreshToken: newRefreshToken,
-           accessToken: accessToken,
-           compare:"compare here",
-           old: oldRefreshToken,
-        }
-        ,
+          refreshToken: newRefreshToken,
+          accessToken: accessToken,
+          compare: "compare here",
+          old: oldRefreshToken,
+        },
         "acess token generated and sent successfully"
       )
     );
 });
+// change password method
 
-export { registerUser, LoginUser, LogoutUser, getNewAccessToken };
+/** it is possible iff user is login 
+
+ */
+
+const UpdateCurrentPassword = AsyncHandler(async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findById(req.user?._id);
+  if (!user)
+    throw new ApiError(401, "unauthorised access || user is not login");
+  // checking is old password matches the password from database
+  const isCorrectPassword = await user.isCorrectPassword(oldPassword);
+  if (!isCorrectPassword) throw new ApiError(401, " invalid previous password");
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "password updated successfully"));
+});
+// special endpoint get current user data if user is login
+const currentLoggedinUser = AsyncHandler(async (req, res, next) => {
+  // if user is logged in , then it has access of .user object that we created in middleware
+  const currentUser = req.user;
+  if (!currentUser) throw new ApiError(400, "unauthorised access");
+  // const user = await User.findById(currentUser._id).select(" -password -refreshToken ")
+  // if(!user) throw new ApiError(401,"something went wrong in finding error");--<not needed>
+  res.status(200).json(200, currentUser, "fetched user data successfully");
+});
+
+//   controllers for updat fullName and password -_> kewal , person can do all the stuf
+
+const updateFullName = AsyncHandler(async (req, res, next) => {
+  const { fullName } = req.body;
+  console.log("getting fullName at request:", fullName);
+
+  if (!fullName)
+    throw new ApiError(401, "full name is not getting available at server");
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: { fullName },
+    },
+    {
+      new: true,
+    }
+  ).select(" -password -refreshToken");
+  // console.log('finded user for updating full name', user);
+  if (!user) throw new ApiError(402, "invalid user authorisation");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "full name updated successfully"));
+});
+
+// controller for updating email
+const updateEmail = AsyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(401, "invalid email");
+  console.log("getting email after request", email);
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    { $set: { email } },
+    { new: true }
+  ).select("-password -refreshToken");
+  console.log("finded user for updating email", user);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "email updated successfuly"));
+});
+//   controller for updating avatar image
+/*
+->----steps for updating avatar image-----
+ upload image to local ,
+ check if image is available or not 
+ upload it to cloudinary , get link
+ find user from database from logged user id,
+ update in database
+ 
+*/
+const updateAvatarImage = AsyncHandler(async (req, res, next) => {
+  const localAvatarfile = req.files?.avatar[0]?.path;
+  if (!localAvatarfile) throw new ApiError(400, "avatar is not uploaded ");
+  // upload to cloudinary
+  const cloudinaryAvatarPath = await UploadFileToCloudinary(localAvatarfile);
+  // console.log('cloudinaryAvatarPath ::',cloudinaryAvatarPath );
+
+  if (!cloudinaryAvatarPath)
+    throw new ApiError(400, "avatar is not uploaded on cloudinary");
+  console.log("req.user?._id:::::<><<>", req.user?._id);
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    { $set: { avatar: cloudinaryAvatarPath.url } },
+    { new: true }
+  ).select("-password -refreshToken");
+  console.log('user at updateAvatarImage""""', user);
+
+  if (!user) throw new ApiError(400, "user not found");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "avatar updated successfully"));
+});
+
+// controller for updating cover image
+
+const updateCoverImage = AsyncHandler(async (req, res, next) => {
+  const localCoverImagePath = req.files?.coverImage[0]?.path;
+  if (!localCoverImagePath)
+    throw new ApiError(400, "Cover Image is not uploaded ");
+  // upload to cloudinary
+  const cloudinaryCoverImagePath = await UploadFileToCloudinary(
+    localCoverImagePath
+  );
+  // console.log('cloudinaryAvatarPath ::',cloudinaryAvatarPath );
+
+  if (!cloudinaryCoverImagePath)
+    throw new ApiError(400, "coverImage is not uploaded on cloudinary");
+  //  console.log('req.user?._id:::::<><<>',req.user?._id);
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    { $set: { coverImage: cloudinaryCoverImagePath.url } },
+    { new: true }
+  ).select("-password -refreshToken");
+  console.log('user at updateCoverImage""""', user);
+
+  if (!user) throw new ApiError(400, "user not found");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "coverImage updated successfully"));
+});
+
+export {
+  registerUser,
+  LoginUser,
+  LogoutUser,
+  getNewAccessToken,
+  UpdateCurrentPassword,
+  currentLoggedinUser,
+  updateFullName,
+  updateEmail,
+  updateAvatarImage,
+  updateCoverImage,
+};
