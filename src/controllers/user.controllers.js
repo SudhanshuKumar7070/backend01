@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { AsyncHandler } from "../utils/AsyncHandlerFunctions/AsyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -418,7 +419,7 @@ const updateEmail = AsyncHandler(async (req, res, next) => {
  
 */
 const updateAvatarImage = AsyncHandler(async (req, res, next) => {
-  const localAvatarfile = req.files?.avatar[0]?.path;
+  const localAvatarfile = req.file?.path;
   if (!localAvatarfile) throw new ApiError(400, "avatar is not uploaded ");
   // upload to cloudinary
   const cloudinaryAvatarPath = await UploadFileToCloudinary(localAvatarfile);
@@ -444,7 +445,7 @@ const updateAvatarImage = AsyncHandler(async (req, res, next) => {
 // controller for updating cover image
 
 const updateCoverImage = AsyncHandler(async (req, res, next) => {
-  const localCoverImagePath = req.files?.coverImage[0]?.path;
+  const localCoverImagePath = req.file?.path;
   if (!localCoverImagePath)
     throw new ApiError(400, "Cover Image is not uploaded ");
   // upload to cloudinary
@@ -470,6 +471,132 @@ const updateCoverImage = AsyncHandler(async (req, res, next) => {
     .json(new ApiResponse(200, user, "coverImage updated successfully"));
 });
 
+// aggregate pipeline for getUserChannelProfile
+const getUserChannelProfile = AsyncHandler(async (req, res, next) => {
+  const { userName } = req.params;
+  if (!userName?.trim()) throw new ApiError(400, "userName not found");
+
+  const channelData = await User.aggregate([
+    {
+      $match: {
+        userName: userName.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        // followers: {
+        //   $push: "$subscribers.subscriber",
+        // },
+        // following: {
+        //   $push: "$subscribedTo.channel",
+        // },
+        channelSubscribedTo: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?.id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        userName: 1,
+        subscribersCount: 1,
+        channelSubscribedTo: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+        followers: 1,
+        following: 1,
+      },
+    },
+  ]);
+  console.log("data of aggregation pipeline::", channelData);
+
+  if (!channelData?.length) throw new ApiError(400, "unable to find channel ");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, channelData[0], "user channel fetched successfully")
+    );
+});
+
+const getWatchHistory = AsyncHandler(async (req, res, next) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user?.id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline:[
+                {
+                  $project:{
+                    fullName:1,
+                    userName:1,
+                      avatar:1
+                    
+                  }
+                  // TODO: try different ways of adding pipeline , instead of nested pipeline, use 
+                  // different stages of pipeline
+                },
+                {
+                  $addFields:{
+                    owner:{
+                      $first:"$owner"
+                    }
+                  }
+                }
+              ]
+            },
+          },
+        ],
+      },
+    },
+    
+  ]);
+  if(!user?.length) throw new ApiError(400 , "problem in finding watch history || user not found");
+  return res.status(200).json(new ApiResponse(200,user[0].watchHistory,"watch history fetched successfully"));
+
+});
 export {
   registerUser,
   LoginUser,
@@ -481,4 +608,6 @@ export {
   updateEmail,
   updateAvatarImage,
   updateCoverImage,
+  getUserChannelProfile,
+  getWatchHistory,
 };
