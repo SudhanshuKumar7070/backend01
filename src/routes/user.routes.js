@@ -48,4 +48,6 @@ router
   .patch(verifyJWT, upload.single("coverImage"), updateCoverImage);
 router.route("/channel/:userName").get(verifyJWT,getUserChannelProfile);
 router.route("/watch-history").get(verifyJWT,getWatchHistory);
+// video routes
+
 export default router;
