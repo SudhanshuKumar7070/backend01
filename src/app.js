@@ -26,12 +26,18 @@ app.use(express.static("public"))
  import dasboardRouter from "./routes/dashboard.route.js"
  import likesRouter from "./routes/likes.routes.js"
  import healthCheckRouter from "./routes/healthCheckRoute.js"
+ import commentRouter from "./routes/comment.route.js"
+ import playlistRouter from "./routes/playlist.route.js"
+ import subscriptionRouter  from "./routes/subscribe.route.js"
  app.use("/api/v1/users",userRouter)
  app.use("/api/v1/videos",videosRouter)
 app.use("/api/v1/tweets",tweetRouter)
 app.use("/api/v1/dash_board",dasboardRouter)
 app.use("/api/v1/like",likesRouter)
 app.use("/api/v1/healthCheck",healthCheckRouter)
+app.use("/api/v1/comments",commentRouter)
+app.use("/api/v1/playlist",playlistRouter)
+app.use("/api/v1/subscription",subscriptionRouter)
  
 export {app}
 // app.get('/',(req,res)=>{

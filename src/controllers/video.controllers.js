@@ -338,7 +338,7 @@ const videos = await Video.aggregate([
       
     }
    }
-]).sort({[sortBy]: sortType==="asc"?1:-1}).skip(skip)
+]).sort({[sortBy]: sortType==="asc"?1:-1}).skip(skip).limit(limit)
 // console.log( "video after getUserQuerry:",videos);
 if (!videos || videos.length === 0) throw new ApiError(400, "video not found! ");
    

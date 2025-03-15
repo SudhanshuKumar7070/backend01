@@ -1,6 +1,6 @@
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { AsyncHandler } from "../utils/AsyncHandlerFunctions/AsyncHandler";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { AsyncHandler } from "../utils/AsyncHandlerFunctions/AsyncHandler.js";
 import { Subscription } from "../models/subscription.models.js";
 import mongoose from "mongoose";
 
@@ -58,7 +58,7 @@ const toggleSubscription = AsyncHandler(async (req, res, next) => {
 
     return res
       .status(200)
-      .json(200, { subscribed: false }, "channel undsubscribed successfully");
+      .json(new ApiResponse(200, { subscribed: false }, "channel undsubscribed successfully"));
   }
 });
 
